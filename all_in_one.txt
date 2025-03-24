@@ -1,0 +1,244 @@
+import java.util.*;
+
+public class OperatorPrecedenceParser {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        System.out.print("Enter number of terminals: ");
+        int n = sc.nextInt();
+        char[] ter = sc.next().toCharArray();
+        char[][] opt = new char[n][n];
+        
+        System.out.println("Enter precedence table values:");
+        for (int i = 0; i < n; i++)
+            for (int j = 0; j < n; j++) {
+                System.out.print(ter[i] + " " + ter[j] + ": ");
+                opt[i][j] = sc.next().charAt(0);
+            }
+
+        System.out.println("\nTable:");
+        for (char t : ter) System.out.print("\t" + t);
+        System.out.println();
+        for (int i = 0; i < n; i++) {
+            System.out.print(ter[i]);
+            for (int j = 0; j < n; j++) System.out.print("\t" + opt[i][j]);
+            System.out.println();
+        }
+
+        System.out.print("Enter input string: ");
+        char[] ip = sc.next().toCharArray();
+        char[] stack = new char[20];
+        int top = 0, i = 0;
+        stack[top] = '$';
+        
+        System.out.println("\nSTACK\tINPUT\tACTION");
+        while (i <= ip.length) {
+            int col = 0, row = 0;
+            for (int k = 0; k < n; k++) {
+                if (stack[top] == ter[k]) col = k;
+                if (i < ip.length && ip[i] == ter[k]) row = k;
+            }
+            if (stack[top] == '$' && (i == ip.length || ip[i] == '$')) {
+                System.out.println("String is accepted");
+                break;
+            }
+            if ((opt[col][row] == '<' || opt[col][row] == '=')) {
+                stack[++top] = ip[i++];
+                System.out.println(String.valueOf(stack).trim() + "\t" + String.valueOf(Arrays.copyOfRange(ip, i, ip.length)).trim() + "\tShift");
+            } else if (opt[col][row] == '>') {
+                while (stack[top] != '<') top--;
+                top--;
+                System.out.println(String.valueOf(stack).trim() + "\t" + String.valueOf(Arrays.copyOfRange(ip, i, ip.length)).trim() + "\tReduce");
+            } else {
+                System.out.println("String is not accepted");
+                break;
+            }
+        }
+        sc.close();
+    }
+}
+
+
+import java.util.*;
+
+class ProductionRule {
+    String left, right;
+
+    ProductionRule(String l, String r) {
+        left = l;
+        right = r;
+    }
+}
+
+public class ShiftReduceParser {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        // Input number of production rules
+        System.out.print("Enter number of production rules: ");
+        int n = sc.nextInt();
+        sc.nextLine();
+
+        ProductionRule[] rules = new ProductionRule[n];
+        System.out.println("Enter production rules (format: left->right):");
+
+        // Input production rules
+        for (int i = 0; i < n; i++) {
+            String[] parts = sc.nextLine().split("->");
+            rules[i] = new ProductionRule(parts[0], parts[1]);
+        }
+
+        // Input string to parse
+        System.out.print("Enter input string: ");
+        String input = sc.nextLine(), stack = "";
+        int i = 0;
+
+        // Shift-Reduce Parsing
+        while (true) {
+            if (i < input.length()) {
+                stack += input.charAt(i++);
+                System.out.println(stack + "\t" + input.substring(i) + "\tShift");
+            }
+
+            for (ProductionRule rule : rules) {
+                while (stack.contains(rule.right)) {
+                    stack = stack.replaceFirst(rule.right, rule.left);
+                    System.out.println(stack + "\t" + input.substring(i) + "\tReduce " + rule.left + "->" + rule.right);
+                }
+            }
+
+            if (stack.equals(rules[0].left) && i == input.length()) {
+                System.out.println("\nAccepted");
+                break;
+            }
+
+            if (i == input.length()) {
+                System.out.println("\nNot Accepted");
+                break;
+            }
+        }
+
+        sc.close();
+    }
+}
+
+
+
+import java.util.Scanner;
+
+public class DFA {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Enter a string: ");
+        String input = scanner.nextLine();
+        scanner.close();
+
+        if (isAcceptedByDFA(input)) {
+            System.out.println("The string is accepted by the DFA (ends with 'abc').");
+        } else {
+            System.out.println("The string is not accepted by the DFA.");
+        }
+    }
+
+    public static boolean isAcceptedByDFA(String input) {
+        // DFA states
+        int state = 0;
+
+        for (char ch : input.toCharArray()) {
+            switch (state) {
+                case 0 -> state = (ch == 'a') ? 1 : 0;
+                case 1 -> state = (ch == 'b') ? 2 : (ch == 'a') ? 1 : 0;
+                case 2 -> state = (ch == 'c') ? 3 : (ch == 'a') ? 1 : 0;
+                case 3 -> state = (ch == 'a') ? 1 : 0;
+            }
+        }
+
+        return state == 3; // Accepting state is 3
+    }
+}
+
+
+
+import java.util.*;
+
+public class LexicalAnalyzer {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Enter a string: ");
+        String input = scanner.nextLine();
+        scanner.close();
+
+        // Define keywords, operators, and separators
+        String[] keywords = {"int", "float", "if", "else", "while", "return"};
+        char[] operators = {'+', '-', '*', '/', '=', '<', '>'};
+        char[] separators = {';', ',', '(', ')', '{', '}'};
+
+        String[] tokens = input.split("\\s+"); // Split by whitespace
+
+        System.out.println("Token\t\tType");
+        System.out.println("-------------------------");
+
+        for (String token : tokens) {
+            if (Arrays.asList(keywords).contains(token)) {
+                System.out.println(token + "\t\tKeyword");
+            } else if (token.matches("[0-9]+")) {
+                System.out.println(token + "\t\tInteger Literal");
+            } else if (token.matches("[a-zA-Z_][a-zA-Z0-9_]*")) {
+                System.out.println(token + "\t\tIdentifier");
+            } else if (new String(operators).contains(token)) {
+                System.out.println(token + "\t\tOperator");
+            } else if (new String(separators).contains(token)) {
+                System.out.println(token + "\t\tSeparator");
+            } else {
+                System.out.println(token + "\t\tUnknown");
+            }
+        }
+    }
+}
+
+
+
+import java.util.*;
+
+public class Main {
+    public static void main(String args[]) {
+        Scanner sc = new Scanner(System.in);
+
+        // Input the number of productions
+        System.out.print("Enter number of productions: ");
+        int n = sc.nextInt();
+        sc.nextLine(); // Consume the newline character after the integer input
+
+        for (int i = 0; i < n; i++) {
+            System.out.print("Enter production " + (i + 1) + ": ");
+            String str = sc.nextLine().trim();
+
+            // Ensure the input format is valid
+            if (!str.contains("->") || !str.contains("/")) {
+                System.out.println("Invalid production format. Must contain '->' and '/'!");
+                continue;
+            }
+
+            String[] parts = str.split("->");
+            String ter = parts[0].trim(); // Non-terminal (LHS)
+            String[] a = parts[1].trim().split("/"); // Split RHS into components
+
+            // Check if there is left recursion
+            if (a[0].startsWith(ter)) { // Check if the first choice starts with the LHS
+                String alpha = a[0].substring(ter.length()).trim(); // Recursive part (alpha)
+                String beta = a[1].trim(); // Non-recursive part (beta)
+
+                // Create transformed productions
+                String ans = ter + " -> " + beta + " " + ter + "'";
+                String ans1 = ter + "' -> " + alpha + " " + ter + "' / epsilon";
+
+                System.out.println("\nTransformed Productions:");
+                System.out.println(ans);
+                System.out.println(ans1);
+            } else {
+                System.out.println("\nNo Left Recursion in Production: " + str);
+            }
+        }
+
+        sc.close(); // Close the scanner
+    }
+}
